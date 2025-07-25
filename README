@@ -6,7 +6,7 @@ The system automatically resolves source dependencies via `#include` directives,
 
 ---
 
-## 🛠️ Requirements
+## Requirements
 
 ### General (Linux)
 - `bash`

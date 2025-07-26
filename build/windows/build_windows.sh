@@ -95,11 +95,15 @@ if [[ ! -s "$output_path" ]]; then
 fi
 
 # Optional execution via PowerShell
-if [[ "$2" == "e" || "$2" == "execute" ]]; then
-    echo "Launching $output_path in PowerShell..."
-    win_path=$(wslpath -w "$output_path")
-    powershell.exe -NoProfile -NonInteractive -Command "Start-Process '$win_path'" || {
-        echo "Failed to launch."
-        exit 1
-    }
-fi
+for arg in "$@"; do
+    if [[ "$arg" =~ ^(-e|--execute|e|execute)$ ]]; then
+        echo "Launching $output_path in PowerShell..."
+        win_path=$(wslpath -w "$output_path")
+        powershell.exe -NoProfile -NonInteractive -Command "Start-Process '$win_path'" || {
+            echo "Failed to launch."
+            exit 1
+        }
+        break
+    fi
+done
+

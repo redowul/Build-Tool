@@ -97,7 +97,10 @@ if [[ ! -s "$output_path" ]]; then
 fi
 
 # Optional execution
-if [[ "$2" == "e" || "$2" == "execute" ]]; then
-    echo "Running $output_path..."
-    "$output_path"
-fi
+for arg in "$@"; do
+    if [[ "$arg" =~ ^(-e|--execute|e|execute)$ ]]; then
+        echo "Running $output_path..."
+        "$output_path"
+        break
+    fi
+done

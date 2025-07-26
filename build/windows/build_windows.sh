@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-# Load environment
-source ./build/config.env
+# Resolve script and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Load config from project root
+source "$PROJECT_ROOT/build/config.env"
 
 # Validate required config
 : "${SRC_DIRECTORY:?Missing SRC_DIRECTORY in config.env}"
@@ -10,16 +14,17 @@ source ./build/config.env
 : "${ARTIFACTS_DIRECTORY_WINDOWS:?Missing ARTIFACTS_DIRECTORY_WINDOWS in config.env}"
 : "${TARGET_DIRECTORY_WINDOWS:?Missing TARGET_DIRECTORY_WINDOWS in config.env}"
 : "${ENTRYPOINT:?Missing ENTRYPOINT in config.env}"
+: "${SDL_WINDOWS_PATH:?Missing SDL_WINDOWS_PATH in config.env}"
+
+# Resolve to absolute paths
+SRC_DIRECTORY="$PROJECT_ROOT/$SRC_DIRECTORY"
+ENTRYPOINT="$PROJECT_ROOT/$ENTRYPOINT"
+ARTIFACTS_DIRECTORY_WINDOWS="$PROJECT_ROOT/$ARTIFACTS_DIRECTORY_WINDOWS"
+TARGET_DIRECTORY_WINDOWS="$PROJECT_ROOT/$TARGET_DIRECTORY_WINDOWS"
+SDL_PATH="$PROJECT_ROOT/$SDL_WINDOWS_PATH"
 
 # Create output directories
 mkdir -p "$ARTIFACTS_DIRECTORY_WINDOWS" "$TARGET_DIRECTORY_WINDOWS"
-
-# SDL base directory for Windows build (cross-compile libs)
-SDL_PATH="$SDL_WINDOWS_PATH"
-if [[ -z "$SDL_PATH" ]]; then
-    echo "Error: SDL path not set in config.env"
-    exit 1
-fi
 
 # Track sources
 declare -a all_sources=("$ENTRYPOINT")
@@ -89,7 +94,7 @@ if [[ ! -s "$output_path" ]]; then
     exit 1
 fi
 
-# Optional execution
+# Optional execution via PowerShell
 if [[ "$2" == "e" || "$2" == "execute" ]]; then
     echo "Launching $output_path in PowerShell..."
     win_path=$(wslpath -w "$output_path")

@@ -1,19 +1,27 @@
 #!/bin/bash
-
-# Enable strict error handling, exit immediately on error
 set -e
 
-# Load environment 
-source ./build/config.env
+# Resolve script and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Validate required config
+# Load configuration from project root
+source "$PROJECT_ROOT/build/config.env"
+
+# Validate required config variables
 : "${SRC_DIRECTORY:?Missing SRC_DIRECTORY in config.env}"
 : "${OUTPUT_FILENAME_LINUX:?Missing OUTPUT_FILENAME_LINUX in config.env}"
 : "${ARTIFACTS_DIRECTORY_LINUX:?Missing ARTIFACTS_DIRECTORY_LINUX in config.env}"
 : "${TARGET_DIRECTORY_LINUX:?Missing TARGET_DIRECTORY_LINUX in config.env}"
 : "${ENTRYPOINT:?Missing ENTRYPOINT in config.env}"
 
-# Create directories
+# Resolve all config paths to absolute paths
+SRC_DIRECTORY="$PROJECT_ROOT/$SRC_DIRECTORY"
+ENTRYPOINT="$PROJECT_ROOT/$ENTRYPOINT"
+ARTIFACTS_DIRECTORY_LINUX="$PROJECT_ROOT/$ARTIFACTS_DIRECTORY_LINUX"
+TARGET_DIRECTORY_LINUX="$PROJECT_ROOT/$TARGET_DIRECTORY_LINUX"
+
+# Create build output directories
 mkdir -p "$ARTIFACTS_DIRECTORY_LINUX" "$TARGET_DIRECTORY_LINUX"
 
 # Track all source files
@@ -40,7 +48,7 @@ find_sources() {
     done
 }
 
-# Recursive dependency resolution
+# Recursively find all dependent source files
 while :; do
     new_files=()
     for file in "${all_sources[@]}"; do
@@ -50,7 +58,6 @@ while :; do
             new_files+=("$file")
         fi
     done
-
     [[ ${#new_files[@]} -eq 0 ]] && break
 done
 
@@ -65,7 +72,7 @@ else
     CXXFLAGS="$CXXFLAGS -O2 -DNDEBUG"
 fi
 
-# Compile sources
+# Compile all sources
 object_files=()
 for src in "${all_sources[@]}"; do
     obj="$ARTIFACTS_DIRECTORY_LINUX/$(basename "${src%.cpp}.o")"
@@ -78,12 +85,12 @@ for src in "${all_sources[@]}"; do
     object_files+=("$obj")
 done
 
-# Link
+# Link final binary
 output_path="$TARGET_DIRECTORY_LINUX/$OUTPUT_FILENAME_LINUX"
 echo "Linking → $output_path"
 g++ "${object_files[@]}" -o "$output_path" $LDFLAGS
 
-# Verify output
+# Confirm output exists
 if [[ ! -s "$output_path" ]]; then
     echo "Error: Output file missing or empty."
     exit 1

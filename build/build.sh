@@ -1,13 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-# Get the absolute path to the build/ directory
+# Absolute path to this script's directory (chisel/build)
 BUILD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$BUILD_DIR/.." && pwd)"
 
-# Load configuration values
 source "$BUILD_DIR/config.env"
-
-# Show usage info
+# Show usage
 show_usage() {
     echo "Usage: $0 [linux|windows|l|w] [-e|--execute]"
     echo "  l | linux     Build for Linux"
@@ -16,27 +15,32 @@ show_usage() {
     exit 1
 }
 
-# Require at least one argument (the platform)
+# Require at least one argument
 [[ $# -lt 1 ]] && show_usage
 
-# Choose the appropriate build script based on the platform
 case "$1" in
     l | linux)
-        build_script="$BUILD_SCRIPT_LINUX"
+        build_script="$PROJECT_ROOT/$BUILD_SCRIPT_LINUX"
         ;;
     w | windows)
-        build_script="$BUILD_SCRIPT_WINDOWS"
+        build_script="$PROJECT_ROOT/$BUILD_SCRIPT_WINDOWS"
         ;;
     *)
         show_usage
         ;;
 esac
 
-# Check for optional --execute flag
+# Optional execute flag
 execute_flag=""
 if [[ "${2:-}" =~ ^(-e|--execute|e|execute)$ ]]; then
     execute_flag="execute"
 fi
 
-# Run the build
+# Confirm script exists
+if [[ ! -f "$build_script" ]]; then
+    echo "Build script not found: $build_script"
+    exit 1
+fi
+
+# Execute it
 exec bash "$build_script" $execute_flag
